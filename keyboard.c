@@ -51,15 +51,17 @@ void KEYBOARD_InputReportCreate
 {
     int index;
 
+    // Keyboard report id
+    keyboardInputReport->data[0] = 2; 
+            
     for (index = 0; index < 6 ; index ++)
     {
         /* Create the keyboard button bit map */
-        keyboardInputReport->data[index + 2] = keyboardKeycodeArray->keyCode[index];
+        keyboardInputReport->data[index + 3] = keyboardKeycodeArray->keyCode[index];
     }
 
     /* Update the modifier key */
-    keyboardInputReport->data[0] = keyboardModifierKeys->modifierkeys;
-
+    keyboardInputReport->data[1] = keyboardModifierKeys->modifierkeys;
     return;
 
 }

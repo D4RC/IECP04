@@ -84,6 +84,9 @@ KEYBOARD_INPUT_REPORT APP_MAKE_BUFFER_DMA_READY keyboardInputReport;
 /* Keyboard output report */
 KEYBOARD_OUTPUT_REPORT APP_MAKE_BUFFER_DMA_READY keyboardOutputReport;
 
+/* Mouse Report */
+MOUSE_REPORT mouseReport APP_MAKE_BUFFER_DMA_READY;
+MOUSE_REPORT mouseReportPrevious APP_MAKE_BUFFER_DMA_READY;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -291,7 +294,7 @@ void APP_ProcessSwitchPress(void)
                      * pressed flag will be cleared by the application tasks
                      * routine. We should be ready for the next key press.*/
                     
-                    appData.functionSelect ^= 1;
+                    appData.deviceSelection ^= 1;
                     appData.switchDebounceTimer = 0;
                     appData.ignoreSwitchPress = false;
                 }
@@ -404,7 +407,36 @@ void APP_KeyboardLEDStatus(void)
 
 void APP_EmulateKeyboard(void)
 {
-    if(appData.functionSelect)
+    if(appData.deviceSelection)
+    {
+        if(appData.isSwitch2Pressed)
+        {
+                    appData.isSwitch2Pressed = false;
+                    appData.mouseButton[0] = MOUSE_BUTTON_STATE_PRESSED;
+                    appData.mouseButton[1] = MOUSE_BUTTON_STATE_RELEASED;
+                    appData.xCoordinate = 0;
+                    appData.yCoordinate = 0;
+        }
+        else if (appData.isSwitch3Pressed)
+        {
+                    appData.isSwitch3Pressed = false;
+                    appData.mouseButton[0] = MOUSE_BUTTON_STATE_RELEASED;
+                    appData.mouseButton[1] = MOUSE_BUTTON_STATE_PRESSED;
+                    appData.xCoordinate = 0;
+                    appData.yCoordinate = 0; 
+        }
+        else
+        {
+                    appData.mouseButton[0] = MOUSE_BUTTON_STATE_RELEASED;
+                    appData.mouseButton[1] = MOUSE_BUTTON_STATE_RELEASED;
+                    appData.xCoordinate = 0;
+                    appData.yCoordinate = 0;
+        }
+        MOUSE_ReportCreate(appData.xCoordinate, appData.yCoordinate,
+            appData.mouseButton, &mouseReport);
+        
+    }
+    else
     {
         if(appData.isSwitch2Pressed)
         {
@@ -421,52 +453,30 @@ void APP_EmulateKeyboard(void)
         {
             /* Indicate no event */
              appData.keyCodeArray.keyCode[0] =
-                     USB_HID_KEYBOARD_KEYPAD_RESERVED_NO_EVENT_INDICATED;
+                    USB_HID_KEYBOARD_KEYPAD_RESERVED_NO_EVENT_INDICATED;
         }
-    }
-    else
-    {
-        if(appData.isSwitch2Pressed)
-        {
-            /* Clear the switch pressed flag */
-            appData.isSwitch2Pressed = false;
-            appData.keyCodeArray.keyCode[0] = USB_HID_KEYBOARD_KEYPAD_KEYBOARD_TAB;
-        }
-        else if(appData.isSwitch3Pressed)
-        {
-            appData.isSwitch3Pressed = false;
-            appData.keyCodeArray.keyCode[0] = USB_HID_KEYBOARD_KEYPAD_KEYBOARD_RETURN_ENTER;
-        }
-        else
-        {
-            /* Indicate no event */
-             appData.keyCodeArray.keyCode[0] =
-                     USB_HID_KEYBOARD_KEYPAD_RESERVED_NO_EVENT_INDICATED;
-        }
-    }   
-    
-    KEYBOARD_InputReportCreate(&appData.keyCodeArray,
+        KEYBOARD_InputReportCreate(&appData.keyCodeArray,
             &appData.keyboardModifierKeys, &keyboardInputReport);
-}
-
+    }
+}   
+    
 /**********************************************
  * This function is called by when the device
  * is de-configured. It resets the application
  * state in anticipation for the next device
  * configured event
  **********************************************/
-
+  
 void APP_StateReset(void)
 {
     appData.isReportReceived = false;
     appData.isReportSentComplete = true;
     appData.key = USB_HID_KEYBOARD_KEYPAD_KEYBOARD_A;
     appData.keyboardModifierKeys.modifierkeys = 0;
-    memset(&keyboardOutputReport.data, 0, 64);
+    memset(&keyboardOutputReport.data, 0, 63);
     //appData.isSwitchPressed = false;
     appData.ignoreSwitchPress = false;
 }
-
 
 // *****************************************************************************
 // *****************************************************************************
@@ -503,14 +513,14 @@ void APP_Initialize ( void )
     appData.keyboardModifierKeys.modifierkeys = 0;
 
     /* Initialize the led state */
-    memset(&keyboardOutputReport.data, 0, 64);
+    memset(&keyboardOutputReport.data, 0, 63);
 
     /* Initialize the switch state */
     // appData.isSwitchPressed = false;
     // appData.isSwitch1Pressed = false;
     appData.isSwitch2Pressed = false;
     appData.isSwitch3Pressed = false;
-    appData.functionSelect = false;
+    appData.deviceSelection = false;
     appData.ignoreSwitchPress = false;
 
     /* Initialize the HID instance index.  */
@@ -558,13 +568,10 @@ void APP_Tasks ( void )
             }
             break;
         }
-
         case APP_STATE_WAIT_FOR_CONFIGURATION:
-
             /* Check if the device is configured. The
              * isConfigured flag is updated in the
              * Device Event Handler */
-
             if(appData.isConfigured)
             {
                 /* Initialize the flag and place a request for a
@@ -574,7 +581,7 @@ void APP_Tasks ( void )
 
                 USB_DEVICE_HID_ReportReceive(appData.hidInstance,
                         &appData.receiveTransferHandle,
-                        (uint8_t *)&keyboardOutputReport,64);
+                        (uint8_t *)&keyboardOutputReport,63);
 
                 appData.state = APP_STATE_CHECK_IF_CONFIGURED;
             }
@@ -623,7 +630,7 @@ void APP_Tasks ( void )
                 appData.isReportReceived = false;
                 USB_DEVICE_HID_ReportReceive(appData.hidInstance,
                         &appData.receiveTransferHandle,
-                        (uint8_t *)&keyboardOutputReport,64);
+                        (uint8_t *)&keyboardOutputReport,63);
             }
 
             appData.state = APP_STATE_EMULATE_KEYBOARD;
@@ -637,13 +644,15 @@ void APP_Tasks ( void )
                 
                 APP_EmulateKeyboard();
                 
-                appData.isReportSentComplete = false;
-                USB_DEVICE_HID_ReportSend(appData.hidInstance,
-                    &appData.sendTransferHandle,
-                    (uint8_t *)&keyboardInputReport,
-                    sizeof(KEYBOARD_INPUT_REPORT));
-             }
-
+                if(appData.deviceSelection)
+                {
+                    USB_DEVICE_HID_ReportSend(appData.hidInstance, &appData.sendTransferHandle, (uint8_t*)&mouseReport, sizeof(MOUSE_REPORT));
+                }
+                else
+                {
+                    USB_DEVICE_HID_ReportSend(appData.hidInstance, &appData.sendTransferHandle, (uint8_t*)&keyboardInputReport, sizeof(KEYBOARD_INPUT_REPORT));
+                }
+            }
             appData.state = APP_STATE_CHECK_IF_CONFIGURED;
             break;
 

@@ -149,8 +149,7 @@ typedef struct
 
 typedef struct
 {
-    uint8_t data[8];
-
+    uint8_t data[9];
 }KEYBOARD_INPUT_REPORT;
 
 // *****************************************************************************
@@ -182,7 +181,7 @@ typedef union
 
     }ledState;
 
-    uint8_t data[64];
+    uint8_t data[63];
 
 }KEYBOARD_OUTPUT_REPORT;
 

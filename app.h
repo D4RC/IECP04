@@ -60,7 +60,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "system_config.h"
 #include "system_definitions.h"
 #include "keyboard.h"
-
+#include "mouse.h"
 // *****************************************************************************
 // *****************************************************************************
 // Section: Type Definitions
@@ -146,8 +146,17 @@ typedef struct
     bool isSwitch2Pressed;
     bool isSwitch3Pressed;
     
-    /* Function swaper */
-    bool functionSelect;
+     /* Mouse x coordinate*/
+    MOUSE_COORDINATE xCoordinate;
+
+    /* Mouse y coordinate*/
+    MOUSE_COORDINATE yCoordinate;
+
+    /* Mouse buttons*/
+    MOUSE_BUTTON_STATE mouseButton[MOUSE_BUTTON_NUMBERS];
+    
+    // Device selection
+    bool deviceSelection;
     
     /* Track the send report status */
     bool isReportSentComplete;
