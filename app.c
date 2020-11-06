@@ -309,6 +309,7 @@ void APP_ProcessSwitchPress(void)
     }
     else if(BSP_SWITCH_STATE_PRESSED == (BSP_SwitchStateGet(APP_USB_SWITCH_2)))
     {
+        BSP_LEDOn(APP_USB_LED_2);
         if(appData.ignoreSwitchPress)
         {
             /* This measn the key press is in progress */
@@ -334,9 +335,11 @@ void APP_ProcessSwitchPress(void)
             appData.ignoreSwitchPress = true;
             appData.switchDebounceTimer = 0;
         }
+        BSP_LEDOff(APP_USB_LED_2);
     }
     else if(BSP_SWITCH_STATE_PRESSED == (BSP_SwitchStateGet(APP_USB_SWITCH_3)))
     {
+        BSP_LEDOn(APP_USB_LED_3);
         if(appData.ignoreSwitchPress)
         {
             /* This measn the key press is in progress */
@@ -362,6 +365,7 @@ void APP_ProcessSwitchPress(void)
             appData.ignoreSwitchPress = true;
             appData.switchDebounceTimer = 0;
         }
+        BSP_LEDOff(APP_USB_LED_3);
     }
     else
     {
@@ -383,17 +387,17 @@ void APP_KeyboardLEDStatus(void)
     if(keyboardOutputReport.ledState.numLock
             == KEYBOARD_LED_STATE_ON)
     {
-        BSP_LEDOn(APP_USB_LED_2);
+        ;//BSP_LEDOn(APP_USB_LED_2);
     }
     else
     {
-        BSP_LEDOff(APP_USB_LED_2);
+        ;//BSP_LEDOff(APP_USB_LED_2);
     }
 
     if(keyboardOutputReport.ledState.capsLock
             == KEYBOARD_LED_STATE_ON)
     {
-        BSP_LEDOn(APP_USB_LED_1);
+        ;//BSP_LEDOn(APP_USB_LED_1);
     }
     else
     {
@@ -409,6 +413,7 @@ void APP_EmulateKeyboard(void)
 {
     if(appData.deviceSelection)
     {
+        BSP_LEDOff(APP_USB_LED_1);
         if(appData.isSwitch2Pressed)
         {
                     appData.isSwitch2Pressed = false;
@@ -438,6 +443,7 @@ void APP_EmulateKeyboard(void)
     }
     else
     {
+        BSP_LEDOn(APP_USB_LED_1);
         if(appData.isSwitch2Pressed)
         {
             /* Clear the switch pressed flag */
